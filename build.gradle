@@ -1,0 +1,56 @@
+group 'com.github.texxel'
+version '0.1.1'
+
+apply plugin: 'java'
+
+sourceCompatibility = 1.7
+
+sourceSets {
+    gen {
+        java {
+            srcDirs 'src/main/java', 'src/gen/java'
+        }
+    }
+}
+
+configurations {
+    natives
+}
+
+repositories {
+    mavenCentral()
+    maven { url 'https://oss.sonatype.org/content/repositories/releases/' }
+    jcenter()
+}
+
+dependencies {
+    natives files('libs/data-natives.jar');
+
+    genCompile files('libs/gdx-jnigen-1.9.4.jar');
+    genCompile 'com.github.javaparser:javaparser-core:2.3.0'
+
+    testCompile 'junit:junit:4.11'
+    testCompile 'org.mockito:mockito-core:1.+'
+
+    compile 'com.badlogicgames.gdx:gdx:1.7.2'
+    testCompile "com.badlogicgames.gdx:gdx-backend-headless:1.7.2"
+    testCompile "com.badlogicgames.gdx:gdx-platform:1.7.2:natives-desktop"
+}
+
+uploadArchives {
+    repositories {
+        flatDir {
+            dirs 'repos'
+        }
+    }
+}
+
+jar {
+    from {
+        configurations.natives.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+
+artifacts {
+    files('libs/data-natives.jar');
+}

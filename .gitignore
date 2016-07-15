@@ -1,0 +1,7 @@
+.gradle/*
+.idea/*
+build/*
+jni/*
+repos/*
+DataSerializer.iml
+settings.gradle
