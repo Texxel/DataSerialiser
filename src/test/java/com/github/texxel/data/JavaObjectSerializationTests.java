@@ -1,10 +1,8 @@
 package com.github.texxel.data;
 
-import com.github.texxel.data.*;
 import org.junit.Test;
 
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 import static com.github.texxel.AssertHelpers.*;
 
@@ -15,7 +13,7 @@ public class JavaObjectSerializationTests {
 
         @Constructor
         TestClass(DataIn in) {
-            value = in.read("value", String.class);
+            value = in.read(String.class, "value");
         }
 
         public TestClass(String value) {
@@ -44,11 +42,9 @@ public class JavaObjectSerializationTests {
 
         DataOutRoot out = new DataOutRoot();
         out.write("list", original);
-        PData pData = out.toPrimitiveData();
+        DataIn in = new DataIn(out.toPrimitiveData());
 
-        DataIn in = new DataIn(pData);
-
-        LinkedList read = in.read("list", LinkedList.class);
+        LinkedList read = in.read(LinkedList.class, "list");
         assertListEquals(original, read);
     }
 
@@ -60,7 +56,7 @@ public class JavaObjectSerializationTests {
         out.write("class", clazz);
         DataIn in = new DataIn(out.toPrimitiveData());
 
-        Class classRead = in.read("class", Class.class);
+        Class classRead = in.read(Class.class, "class");
         assertEquals(clazz, classRead);
     }
 
@@ -72,7 +68,7 @@ public class JavaObjectSerializationTests {
         out.write("objs", objects);
         DataIn in = new DataIn(out.toPrimitiveData());
 
-        Object[] objsRead = in.read("objs", Object[].class);
+        Object[] objsRead = in.read(Object[].class, "objs");
         assertArrayEquals(objects, objsRead);
     }
 
@@ -86,7 +82,7 @@ public class JavaObjectSerializationTests {
         out.write("objs", array);
         DataIn in = new DataIn(out.toPrimitiveData());
 
-        Object[] objsRead = in.read("objs", Object[].class);
+        Object[] objsRead = in.read(Object[].class, "objs");
 
         assertEquals("first", objsRead[0]);
         assertSame(objsRead, objsRead[1]);
@@ -100,7 +96,7 @@ public class JavaObjectSerializationTests {
         out.write("ints", ints);
         DataIn in = new DataIn(out.toPrimitiveData());
 
-        int[] read = in.read("ints", int[].class);
+        int[] read = in.read(int[].class, "ints");
 
         assertArrayEquals(ints, read);
     }
@@ -116,25 +112,31 @@ public class JavaObjectSerializationTests {
         out.write("ints", write);
         DataIn in = new DataIn(out.toPrimitiveData());
 
-        int[][] read = in.read("ints", int[][].class);
+        int[][] read = in.read(int[][].class, "ints");
 
         assertArrayEquals(write, read);
     }
 
     @Test
-    public void testPrimitivesReadAsPrimitiveClassType() {
+    public void testMapsReadAndWrite() {
+        HashMap<String, String> strs = new HashMap<>();
+        strs.put("one", "einse");
+        strs.put("two", "drie");
+        TreeMap<String, TestClass> objs = new TreeMap<>();
+        objs.put("a", new TestClass("A"));
+        objs.put("b", new TestClass("B"));
+
         DataOutRoot out = new DataOutRoot();
-        out.write("long", 1);
-        out.write("double", 1.3);
-        out.write("bool", true);
+        out.write("strings", strs);
+        out.write("objs", objs);
 
         DataIn in = new DataIn(out.toPrimitiveData());
 
-        assertEquals(1, (long)in.read("long", long.class));
-        assertEquals(1, (int)in.read("long", int.class));
-        assertEquals(1.3, in.read("double", double.class), 0.001);
-        assertEquals(1.3f, in.read("double", float.class), 0.001);
-        assertEquals(true, in.read("bool", boolean.class));
+        Map<String, Integer> intsRead = in.read(Map.class, "strings");
+        Map<String, Integer> objsRead = in.read(Map.class, "objs");
+
+        assertMapEquals(strs, intsRead);
+        assertMapEquals(objs, objsRead);
     }
 
     @Test
@@ -145,8 +147,24 @@ public class JavaObjectSerializationTests {
 
         DataIn in = new DataIn(out.toPrimitiveData());
 
-        assertEquals(TestEnum.A, in.read("a", TestEnum.class));
-        assertEquals(TestEnum.B, in.read("b", Object.class));
+        assertEquals(TestEnum.A, in.read(TestEnum.class, "a"));
+        assertEquals(TestEnum.B, in.read(Object.class, "b"));
+    }
+
+    @Test
+    public void testIntegersInCollections() {
+        Set<Integer> intsWrite = new HashSet<>();
+        intsWrite.add(1);
+        intsWrite.add(2);
+        intsWrite.add(4);
+
+        DataOutRoot out = new DataOutRoot();
+        out.write("ints", intsWrite);
+
+        DataIn in = new DataIn(out.toPrimitiveData());
+        Set<Integer> intsRead = in.read(Set.class, "ints");
+
+        assertSetEquals(intsWrite, intsRead);
     }
 
 }

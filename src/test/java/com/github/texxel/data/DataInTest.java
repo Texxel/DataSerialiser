@@ -1,6 +1,5 @@
 package com.github.texxel.data;
 
-import com.github.texxel.data.*;
 import com.github.texxel.data.exceptions.MissingDataException;
 import com.github.texxel.data.exceptions.WrongTypeException;
 import org.junit.Test;
@@ -13,13 +12,9 @@ public class DataInTest {
 
         Object value;
 
-        public TestClass(Object value) {
-            this.value = value;
-        }
-
         @Constructor
         private TestClass(DataIn in) {
-            value = in.read("value", Object.class);
+            value = in.read(Object.class, "value");
         }
 
         @Override
@@ -37,26 +32,10 @@ public class DataInTest {
                 .set("long", 123);
         DataIn in = new DataIn(pData);
 
-        assertEquals(true, in.read("bool", Boolean.class));
-        assertEquals(123, (long)in.read("long", Long.class));
-        assertEquals("thing", in.read("string", String.class));
-        assertEquals(1.4, in.read("double", Double.class), 0.1);
-    }
-
-    @Test
-    public void testReadCastPrimitives() {
-        PData pData = new PData()
-                .set("one", 1)
-                .set("half", 0.5);
-        DataIn in = new DataIn(pData);
-
-        assertEquals(1, (int)in.read("one", Integer.class));
-        assertEquals(1, (long)in.read("one", Long.class));
-        assertEquals(1, in.read("one", Float.class), 0.01);
-        assertEquals(1, in.read("one", Double.class), 0.01);
-
-        assertEquals(0.5f, in.read("half", Float.class), 0.01);
-        assertEquals(0.5, in.read("half", Double.class), 0.01);
+        assertEquals(true, in.readBoolean("bool"));
+        assertEquals(123, in.readLong("long"));
+        assertEquals("thing", in.readString("string"));
+        assertEquals(1.4, in.readDouble("double"), 0.1);
     }
 
     @Test
@@ -66,9 +45,9 @@ public class DataInTest {
         DataIn in = new DataIn(pData);
 
         // it shouldn't matter what type it's read in as
-        assertNull(in.read("null", String.class));
-        assertNull(in.read("null", Integer.class));
-        assertNull(in.read("null", Object.class));
+        assertNull(in.read(String.class, "null"));
+        assertNull(in.read(Integer.class, "null"));
+        assertNull(in.read(Object.class, "null"));
     }
 
     @Test
@@ -79,9 +58,9 @@ public class DataInTest {
                 .set("bottom", -10);
         DataIn in = new DataIn(pData);
 
-        assertEquals(10, (long)in.read("top", Long.class));
+        assertEquals(10, in.readLong("top"));
         assertNotNull(in.readSection("ladder"));
-        assertEquals(-10, (long)in.readSection("ladder").read("bottom", Long.class));
+        assertEquals(-10, in.readSection("ladder").readLong("bottom"));
     }
 
     @Test
@@ -100,7 +79,7 @@ public class DataInTest {
         pData.createSection("salmon");
         DataIn in = new DataIn(pData);
 
-        DataIn sub = (DataIn)in.read("salmon", Object.class);
+        DataIn sub = (DataIn)in.read(Object.class, "salmon");
         assertNotNull(sub);
     }
 
@@ -110,8 +89,8 @@ public class DataInTest {
             .set("here", true);
         DataIn in = new DataIn(data);
 
-        in.read("here", Boolean.class);
-        in.read("there", Long.class);
+        in.readBoolean("here");
+        in.readLong("there"); // crash here
     }
 
     @Test(expected = WrongTypeException.class)
@@ -120,7 +99,43 @@ public class DataInTest {
                 .set("int", 10);
         DataIn in = new DataIn(data);
 
-        in.read("int", String.class);
+        in.read(String.class, "int");
+    }
+
+    @Test
+    public void testReadPrimitivesAsWrapper() {
+        PData data = new PData()
+                .set("one", 1)
+                .set("half", 0.5)
+                .set("string", "tuna")
+                .set("bool", false);
+        DataIn in = new DataIn(data);
+
+        Object one    = in.read(Long.class, "one");
+        Object half   = in.read(Double.class, "half");
+        Object string = in.read(String.class, "string");
+        Object bool   = in.read(Boolean.class, "bool");
+
+        assertEquals(1l, one);
+        assertEquals(0.5, half);
+        assertEquals("tuna", string);
+        assertEquals(false, bool);
+    }
+
+    @Test
+    public void testReadPrimitivesAsPrimitiveClassType() {
+        DataOutRoot out = new DataOutRoot();
+        out.write("long", 1);
+        out.write("double", 1.3);
+        out.write("bool", true);
+
+        DataIn in = new DataIn(out.toPrimitiveData());
+
+        assertEquals(1, (long)in.read(long.class, "long"));
+        assertEquals(1, (int)in.read(int.class, "long"));
+        assertEquals(1.3, in.read(double.class, "double"), 0.001);
+        assertEquals(1.3f, in.read(float.class, "double"), 0.001);
+        assertEquals(true, in.read(boolean.class, "bool"));
     }
 
     @Test
@@ -132,15 +147,31 @@ public class DataInTest {
                 .set("bool", false);
         DataIn in = new DataIn(data);
 
-        Object one    = in.read("one", Object.class);
-        Object half   = in.read("half", Object.class);
-        Object string = in.read("string", Object.class);
-        Object bool   = in.read("bool", Object.class);
+        Object one    = in.read(Object.class, "one");
+        Object half   = in.read(Object.class, "half");
+        Object string = in.read(Object.class, "string");
+        Object bool   = in.read(Object.class, "bool");
 
         assertEquals(1l, one);
         assertEquals(0.5, half);
         assertEquals("tuna", string);
         assertEquals(false, bool);
+    }
+
+    @Test
+    public void testReadCastPrimitivesWrappers() {
+        PData pData = new PData()
+                .set("one", 1)
+                .set("half", 0.5);
+        DataIn in = new DataIn(pData);
+
+        assertEquals(1, (int)in.read(Integer.class, "one"));
+        assertEquals(1, (long)in.read(Long.class, "one"));
+        assertEquals(1, in.read(Float.class, "one"), 0.01);
+        assertEquals(1, in.read(Double.class, "one"), 0.01);
+
+        assertEquals(0.5f, in.read(Float.class, "half"), 0.01);
+        assertEquals(0.5, in.read(Double.class, "half"), 0.01);
     }
 
     @Test
@@ -152,7 +183,7 @@ public class DataInTest {
                 .set("value", "hi");
         DataIn in = new DataIn(data);
 
-        TestClass obj = in.read("object", TestClass.class);
+        TestClass obj = in.read(TestClass.class, "object");
 
         assertNotNull(obj);
         assertEquals("hi", obj.value);
@@ -167,7 +198,7 @@ public class DataInTest {
                 .set("value", "hi");
         DataIn in = new DataIn(data);
 
-        TestClass obj = (TestClass)in.read("object", Object.class);
+        TestClass obj = (TestClass)in.read(Object.class, "object");
 
         assertNotNull(obj);
         assertEquals("hi", obj.value);
@@ -192,8 +223,8 @@ public class DataInTest {
         DataIn in = new DataIn(data);
 
         // these two lines are the real magic of this whole library
-        TestClass a = in.read("A", TestClass.class);
-        TestClass b = in.read("B", TestClass.class);
+        TestClass a = in.read(TestClass.class, "A");
+        TestClass b = in.read(TestClass.class, "B");
 
         assertSame(b, a.value);
         assertSame(a, b.value);

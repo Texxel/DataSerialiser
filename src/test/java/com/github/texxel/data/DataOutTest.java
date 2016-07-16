@@ -21,7 +21,7 @@ public class DataOutTest {
 
         @Constructor
         private TestSerializable(DataIn data) {
-            this.value = data.read("value", String.class);
+            this.value = data.read(String.class, "value");
         }
 
         @Override
@@ -44,8 +44,8 @@ public class DataOutTest {
 
         @Constructor
         private TestRef(DataIn data) {
-            id = data.read("id", String.class);
-            reference = data.read("value", TestRef.class);
+            id = data.read(String.class, "id");
+            reference = data.read(TestRef.class, "value");
         }
 
         @Override
@@ -69,6 +69,16 @@ public class DataOutTest {
         assertEquals(1.5, pdata.getDouble("float"), 0.01);
         assertEquals("blue", pdata.getString("fish"));
         assertEquals(false, pdata.getBoolean("bool"));
+    }
+
+    @Test
+    public void testWriteStringAsObject() {
+        DataOutRoot data = new DataOutRoot();
+        data.write("thing", (Object)"one");
+
+        PData pData = data.toPrimitiveData();
+
+        assertEquals("one", pData.getString("thing"));
     }
 
     @Test
@@ -98,7 +108,6 @@ public class DataOutTest {
         assertEquals("__#"+System.identityHashCode(test), thingData.getString("__id"));
         assertEquals("Fish", thingData.getString("value"));
     }
-
 
     @Test( expected = InvalidDataException.class)
     public void testSensibleExceptionOnInvalidData() {

@@ -13,51 +13,8 @@ import java.util.*;
  */
 class PrimitiveConverter {
 
-    private interface Converter<T> {
-        void write (T obj, PData data, String key);
-    }
-
-    private static Map<Class, Converter> primitives = new HashMap<>();
     private static Map<Class, Class> wrappedTypes = new HashMap<>();
-
     static {
-        primitives.put(Integer.class, new Converter<Integer>() {
-            @Override
-            public void write (Integer obj, PData data, String key) {
-                data.set(key, obj);
-            }
-        });
-        primitives.put(Float.class, new Converter<Float>() {
-            @Override
-            public void write (Float obj, PData data, String key) {
-                data.set(key, obj);
-            }
-        });
-        primitives.put(Double.class, new Converter<Double>() {
-            @Override
-            public void write (Double obj, PData data, String key) {
-                data.set(key, obj);
-            }
-        });
-        primitives.put(Long.class, new Converter<Long>() {
-            @Override
-            public void write (Long obj, PData data, String key) {
-                data.set(key, obj);
-            }
-        });
-        primitives.put(Boolean.class, new Converter<Boolean>() {
-            @Override
-            public void write (Boolean obj, PData data, String key) {
-                data.set(key, obj);
-            }
-        });
-        primitives.put(String.class, new Converter<String>() {
-            @Override
-            public void write (String obj, PData data, String key) {
-                data.set(key, obj);
-            }
-        });
-
         wrappedTypes.put(boolean.class, Boolean.class);
         wrappedTypes.put(byte.class, Byte.class);
         wrappedTypes.put(short.class, Short.class);
@@ -74,64 +31,65 @@ class PrimitiveConverter {
             pData.setNull(key);
             return;
         }
+        if (obj instanceof String) {
+            data.write(key, (String)obj);
+            return;
+        }
         Class clazz = obj.getClass();
-        if (primitives.containsKey(clazz)) {
-            primitives.get(clazz).write(obj, pData, key);
-        } else {
-            long id = System.identityHashCode(obj);
-            String idKey = "__#" + id;
-            // check if the data has already been written
-            DataOut previous = data.global.get(id);
-            if (previous != null) {
-                if ( previous.depth <= data.depth ) {
-                    // write a reference to the other location
-                    pData.set(key, idKey);
-                    // add a reference to the top level
-                    if (!data.root.contains(idKey)) {
-                        PData section = data.root.createSection(idKey);
-                        for (String path : previous.path) {
-                            section = section.createSection(path);
-                        }
-                    }
-                } else {
-                    // move the contents to over here
-                    PData oldPContainer = data.containers.get(id);
-                    PData newPContainer = data.pData;
-                    PData objPData = previous.pData;
 
-                    //rewire the primitive containers
-                    oldPContainer.set(previous.path[previous.path.length - 1], idKey);
-                    newPContainer.data.put(key, objPData);
-
-                    // correct the data container
-                    DataOut moved = new DataOut(data.getPath(key), objPData, data.global, data.containers, data.root, data.depth+1);
-                    data.global.put(id, moved);
-
-                    // correct the top level reference
+        long id = System.identityHashCode(obj);
+        String idKey = "__#" + id;
+        // check if the data has already been written
+        DataOut previous = data.global.get(id);
+        if (previous != null) {
+            if ( previous.depth <= data.depth ) {
+                // write a reference to the other location
+                pData.set(key, idKey);
+                // add a reference to the top level
+                if (!data.root.contains(idKey)) {
                     PData section = data.root.createSection(idKey);
-                    for (String path : moved.path) {
+                    for (String path : previous.path) {
                         section = section.createSection(path);
                     }
                 }
-                return;
-            }
+            } else {
+                // move the contents to over here
+                PData oldPContainer = data.containers.get(id);
+                PData newPContainer = data.pData;
+                PData objPData = previous.pData;
 
-            // check the object type can be serialized
-            DataConverter converter = ConverterRegistry.find(clazz);
-            if (converter == null)
-                throw new InvalidDataException("No converter registered for '" + clazz.getName() + "'");
+                //rewire the primitive containers
+                oldPContainer.set(previous.path[previous.path.length - 1], idKey);
+                newPContainer.data.put(key, objPData);
 
-            // write the data here
-            DataOut objData = data.createSection(key);
-            data.global.put(id, objData);
-            data.containers.put(id, data.pData);
-            objData.write("__classname", clazz.getName());
-            objData.write("__id", idKey);
-            try {
-                converter.serialize(obj, objData);
-            } catch (Throwable thr) {
-                throw new DataSerializationException("Failed to serialize '" + clazz.getName() + "'", thr);
+                // correct the data container
+                DataOut moved = new DataOut(data.getPath(key), objPData, data.global, data.containers, data.root, data.depth+1);
+                data.global.put(id, moved);
+
+                // correct the top level reference
+                PData section = data.root.createSection(idKey);
+                for (String path : moved.path) {
+                    section = section.createSection(path);
+                }
             }
+            return;
+        }
+
+        // check the object type can be serialized
+        DataConverter converter = ConverterRegistry.find(clazz);
+        if (converter == null)
+            throw new InvalidDataException("No converter registered for '" + clazz.getName() + "'");
+
+        // write the data here
+        DataOut objData = data.createSection(key);
+        data.global.put(id, objData);
+        data.containers.put(id, data.pData);
+        objData.write("__classname", clazz.getName());
+        objData.write("__id", idKey);
+        try {
+            converter.serialize(obj, objData);
+        } catch (Throwable thr) {
+            throw new DataSerializationException("Failed to serialize '" + clazz.getName() + "'", thr);
         }
     }
 
@@ -141,17 +99,15 @@ class PrimitiveConverter {
 
         if (type == null)
             throw new MissingDataException("No value mapped to '" + key + "'");
-
         if (expected.isPrimitive())
             expected = wrappedTypes.get(expected);
-
         switch (type) {
             case NULL:
                 return null;
             case BOOLEAN:
                 if (expected.isAssignableFrom(Boolean.class))
                     return (T) (Boolean) pData.getBoolean(key);
-                return badType(expected, Boolean.class, key);
+                throw badType(expected, Boolean.class, key);
             case LONG:
                 if (expected.isAssignableFrom(Long.class))
                     return (T)(Long)pData.getLong(key);
@@ -161,13 +117,13 @@ class PrimitiveConverter {
                     return (T)(Float)(float)pData.getLong(key);
                 if (expected.isAssignableFrom(Double.class))
                     return (T)(Double)(double)pData.getLong(key);
-                return badType(expected, Long.class, key);
+                throw badType(expected, Long.class, key);
             case DOUBLE:
                 if (expected.isAssignableFrom(Double.class))
                     return (T)(Double)pData.getDouble(key);
                 if (expected.isAssignableFrom(Float.class))
                     return (T)(Float)(float)pData.getDouble(key);
-                return badType(expected, Double.class, key);
+                throw badType(expected, Double.class, key);
             case STRING:
                 String contents = pData.getString(key);
                 if (contents.startsWith("__#")) {
@@ -176,14 +132,29 @@ class PrimitiveConverter {
                 }
                 if (expected.isAssignableFrom(String.class))
                     return (T)contents;
-                return badType(expected, String.class, key);
+                throw badType(expected, String.class, key);
             case DATA:
                 // continue;
                 break;
             default:
                 throw new RuntimeException("Unknown type " + type);
         }
-        // case Data:
+        if (type == PData.Type.NULL)
+            return null;
+        if (type == PData.Type.STRING) {
+            String contents = pData.getString(key);
+            // it might be a reference type?
+            if (contents.startsWith("__#")) {
+                return getObjectReference(contents, data, expected);
+            }
+            // maybe we want a string?
+            if (expected.isInstance(contents)) {
+                return (T)contents;
+            }
+        }
+        if (type != PData.Type.DATA)
+            throw new WrongTypeException("Expected an object type but found '" + type + "' at key '" + key + "'");
+
         // look up the cache for the object
         Object cached = data.cache.get(key);
         if (cached != null) {
@@ -198,7 +169,7 @@ class PrimitiveConverter {
             if (expected.isAssignableFrom(DataIn.class))
                 value = (T) dataSec;
             else
-                value = badType(expected, DataIn.class, key);
+                throw badType(expected, DataIn.class, key);
         } else {
             String id = pDataSec.getString("__id");
             Object maybe = data.references.get(id);
@@ -217,7 +188,7 @@ class PrimitiveConverter {
         return (T)value;
     }
 
-    private static <T> T badType( Class expected, Class actual, String key ) {
+    private static RuntimeException badType( Class expected, Class actual, String key ) {
         throw new WrongTypeException("Expected " + expected.getName() + " but found " + actual + " in key " + key);
     }
 
@@ -230,7 +201,7 @@ class PrimitiveConverter {
             if (expected.isAssignableFrom(actual))
                 return (T)value;
             else
-                return badType(expected, actual, id);
+                throw badType(expected, actual, id);
         }
 
         PData path = data.root.getSection(id);

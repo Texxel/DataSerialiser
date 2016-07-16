@@ -13,7 +13,7 @@ public class EnumConverter implements DataConverter<Enum> {
 
     @Override
     public Enum create (DataIn bundle, Class<? extends Enum> stored) {
-        String name = bundle.read("name", String.class);
+        String name = bundle.readString("name");
         return Enum.valueOf(stored, name);
     }
 

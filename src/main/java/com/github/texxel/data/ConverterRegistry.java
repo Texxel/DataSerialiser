@@ -1,9 +1,6 @@
 package com.github.texxel.data;
 
-import com.github.texxel.data.serializers.ArrayConverter;
-import com.github.texxel.data.serializers.CollectionConverter;
-import com.github.texxel.data.serializers.DataSerializer;
-import com.github.texxel.data.serializers.EnumConverter;
+import com.github.texxel.data.serializers.*;
 
 import java.util.*;
 
@@ -32,8 +29,17 @@ public final class ConverterRegistry {
     static {
         register(DataSerializable.class, new DataSerializer());
         register(Collection.class, new CollectionConverter());
+        register(Map.class, new MapConverter());
         register(Class.class, new ClassConverter());
         register(Enum.class, new EnumConverter());
+        register(Integer.class, new PrimitiveConverters.IntegerConverter());
+        register(Long.class, new PrimitiveConverters.LongConverter());
+        register(Double.class, new PrimitiveConverters.DoubleConverter());
+        register(Float.class, new PrimitiveConverters.FloatConverter());
+        register(Character.class, new PrimitiveConverters.CharConverter());
+        register(Byte.class, new PrimitiveConverters.ByteConverter());
+        register(Short.class, new PrimitiveConverters.ShortConverter());
+        register(Boolean.class, new PrimitiveConverters.BooleanConverter());
     }
 
 }

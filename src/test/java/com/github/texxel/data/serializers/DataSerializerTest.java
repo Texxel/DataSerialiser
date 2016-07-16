@@ -18,7 +18,7 @@ public class DataSerializerTest {
 
         @Constructor
         private TestObject(DataIn data) {
-            this.value = data.read("Pizza", String.class);
+            this.value = data.read(String.class, "Pizza");
         }
 
         @Override
@@ -40,7 +40,7 @@ public class DataSerializerTest {
     @Test
     public void testCreatesObject() {
         DataIn bundle = mock(DataIn.class);
-        when(bundle.read("Pizza", String.class)).thenReturn("Hawian");
+        when(bundle.read(String.class, "Pizza")).thenReturn("Hawian");
 
         TestObject result = (TestObject) new DataSerializer().create(bundle, TestObject.class);
 
@@ -51,7 +51,7 @@ public class DataSerializerTest {
     @Test
     public void testInitialisesObject() {
         DataIn bundle = mock(DataIn.class);
-        when(bundle.read("Pizza", String.class)).thenReturn("Hawian");
+        when(bundle.read(String.class, "Pizza")).thenReturn("Hawian");
 
         DataSerializer serializer = new DataSerializer();
         TestObject result = (TestObject) serializer.create(bundle, TestObject.class);

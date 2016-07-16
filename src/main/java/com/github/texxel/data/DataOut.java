@@ -35,6 +35,26 @@ public class DataOut {
         return this;
     }
 
+    public DataOut write(String key, long value) {
+        pData.set(key, value);
+        return this;
+    }
+
+    public DataOut write(String key, double value) {
+        pData.set(key, value);
+        return this;
+    }
+
+    public DataOut write(String key, boolean value) {
+        pData.set(key, value);
+        return this;
+    }
+
+    public DataOut write(String key, String value) {
+        pData.set(key, value);
+        return this;
+    }
+
     /**
      * Creates a new section in the Data.
      * @param key the place to create the new section at

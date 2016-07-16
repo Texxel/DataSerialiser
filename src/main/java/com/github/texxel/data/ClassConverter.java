@@ -11,7 +11,7 @@ public class ClassConverter implements DataConverter<Class> {
 
     @Override
     public Class create (DataIn bundle, Class<? extends Class> actual) {
-        String classname = bundle.read("name", String.class);
+        String classname = bundle.read(String.class, "name");
         try {
             return Class.forName(classname);
         } catch (ClassNotFoundException e) {

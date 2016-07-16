@@ -17,7 +17,6 @@ import java.util.*;
  */
 public final class PData {
 
-
     /**
      * All the primitive types that might be in a PData
      */

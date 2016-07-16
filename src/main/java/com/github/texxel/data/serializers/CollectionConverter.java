@@ -35,9 +35,9 @@ public class CollectionConverter implements DataConverter<Collection> {
 
     @Override
     public void initialise (DataIn bundle, Collection collection) {
-        int size = bundle.read("size", Integer.class);
+        int size = bundle.readInt("size");
         for (int i = 0; i < size; i++) {
-            Object o = bundle.read(Integer.toString(i), Object.class);
+            Object o = bundle.read(Object.class, Integer.toString(i));
             collection.add(o);
         }
     }

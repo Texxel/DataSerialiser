@@ -22,7 +22,7 @@ public class ArrayConverter implements DataConverter<Object> {
 
     @Override
     public Object create (DataIn in, Class type) {
-        int length = in.read("size", Integer.class);
+        int length = in.readInt("size");
         Class componentType = type.getComponentType();
         return Array.newInstance(componentType, length);
     }
@@ -32,7 +32,7 @@ public class ArrayConverter implements DataConverter<Object> {
         int length = Array.getLength(array);
         Class componentType = array.getClass().getComponentType();
         for (int i = 0; i < length; i++) {
-            Array.set(array, i, in.read(Integer.toString(i), componentType));
+            Array.set(array, i, in.read(componentType, Integer.toString(i)));
         }
     }
 }
