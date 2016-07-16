@@ -230,4 +230,32 @@ public class DataInTest {
         assertSame(a, b.value);
     }
 
+    @Test
+    public void testReadBupPrimitives() {
+        PData data = new PData()
+                .set("int", 2)
+                .set("float", 1.3)
+                .set("string", "hi")
+                .set("bool", true);
+        DataIn in = new DataIn(data);
+
+        // longs
+        assertEquals(2, in.readLong("int", -1));
+        assertEquals(-1, in.readLong("float", -1));
+
+        // double
+        assertEquals(2, in.readDouble("int", -1), 0.001f);
+        assertEquals(1.3, in.readDouble("float", -1), 0.001f);
+        assertEquals(-1, in.readDouble("bool", -1), 0.001f);
+
+        // strings
+        assertEquals("hi", in.readString("string", "howdy"));
+        assertEquals("howdy", in.readString("bool", "howdy"));
+        assertEquals("howdy", in.readString("greet", "howdy"));
+
+        // booleans
+        assertEquals(true, in.readBoolean("bool", false));
+        assertEquals(true, in.readBoolean("int", true));
+    }
+
 }

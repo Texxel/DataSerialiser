@@ -101,14 +101,18 @@ public class DataIn {
     }
 
     public double readDouble(String key, double bup) {
-        if (pData.getType(key) == PData.Type.DOUBLE)
+        PData.Type type = pData.getType(key);
+        if (type == PData.Type.DOUBLE)
             return pData.getDouble(key);
+        if (type == PData.Type.LONG)
+            return pData.getLong(key);
         return bup;
     }
 
     public float readFloat(String key) {
         return (float)readDouble(key);
     }
+
     public float readFloat(String key, float bup) {
         return (float)readDouble(key, bup);
     }
