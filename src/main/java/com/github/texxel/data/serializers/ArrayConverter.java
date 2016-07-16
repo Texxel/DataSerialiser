@@ -16,7 +16,33 @@ public class ArrayConverter implements DataConverter<Object> {
         int size = Array.getLength(array);
         out.write("size", size);
         for (int i = 0; i < size; i++) {
-            out.write(Integer.toString(i), Array.get(array, i));
+            Class type = array.getClass().getComponentType();
+            String key = Integer.toString(i);
+            if (type.isPrimitive()) {
+                // the class would work without this monstrosity, but it is
+                // needed so that the output gets primitives values written
+                // instead of objects (which looks ugly in the final form)
+                if (array instanceof int[])
+                    out.write(key, ((int[])array)[i]);
+                else if (array instanceof boolean[])
+                    out.write(key, ((boolean[])array)[i]);
+                else if (array instanceof float[])
+                    out.write(key, ((float[])array)[i]);
+                else if (array instanceof double[])
+                    out.write(key, ((double[])array)[i]);
+                else if (array instanceof long[])
+                    out.write(key, ((long[])array)[i]);
+                else if (array instanceof char[])
+                    out.write(key, ((char[])array)[i]);
+                else if (array instanceof short[])
+                    out.write(key, ((short[])array)[i]);
+                else if (array instanceof byte[])
+                    out.write(key, ((byte[])array)[i]);
+                else
+                    throw new RuntimeException("This should never happen");
+            } else {
+                out.write(key, Array.get(array, i));
+            }
         }
     }
 

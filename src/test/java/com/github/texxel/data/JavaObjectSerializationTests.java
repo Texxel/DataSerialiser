@@ -94,6 +94,7 @@ public class JavaObjectSerializationTests {
 
         DataOutRoot out = new DataOutRoot();
         out.write("ints", ints);
+
         DataIn in = new DataIn(out.toPrimitiveData());
 
         int[] read = in.read(int[].class, "ints");
@@ -115,6 +116,17 @@ public class JavaObjectSerializationTests {
         int[][] read = in.read(int[][].class, "ints");
 
         assertArrayEquals(write, read);
+    }
+
+    @Test
+    public void testPrimitiveArraysAreCondensed() {
+        int[] array = {1, 2, 3};
+
+        DataOutRoot out = new DataOutRoot();
+        out.write("array", array);
+        PData data = out.toPrimitiveData();
+
+        assertEquals(PData.Type.LONG, data.getSection("array").getType("1"));
     }
 
     @Test
