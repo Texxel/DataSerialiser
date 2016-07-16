@@ -10,11 +10,11 @@ public class ClassMapTest {
 
     // Create some classes to test with
     //
-    //           Alive                   Falloffable
-    //             |                          |
-    //           Animal          Thing    Mountable
-    //    +--------+-------+         |    |
-    //   Moose   Squid   Horse ---> Rideable
+    //          I:Alive                    I:Falloffable
+    //             |                             |
+    //          C:Animal           I:Thing  I:Mountable
+    //    +--------+-------+            |    |
+    // C:Moose  C:Squid  C:Horse ---> I:Rideable
     //
 
     interface Alive {};
@@ -56,6 +56,22 @@ public class ClassMapTest {
 
         assertEquals( "squid", map.get( Squid.class ) );
         assertEquals( "rideable", map.get( Horse.class ) );
+    }
+
+    @Test
+    public void testWalksInterfacesOfInterfaces() {
+        ClassMap<Object, String> map = new ClassMap<>();
+        map.put(Falloffable.class, "fall");
+
+        assertEquals("fall", map.get(Horse.class));
+    }
+
+    @Test
+    public void testWalksInterfacesOfParentClasses() {
+        ClassMap<Object, String> map = new ClassMap<>();
+        map.put(Alive.class, "alive");
+
+        assertEquals("alive", map.get(Horse.class));
     }
 
     @Test

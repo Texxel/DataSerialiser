@@ -74,24 +74,13 @@ class ClassMap<K, V> implements Map<Class<? extends K>, V> {
         // walk the interface hierarchy
         parent = clazz;
         while (parent != null) {
-            value = findInterface(clazz);
+            value = findInterface(parent);
             if (value != null)
                 return value;
             parent = parent.getSuperclass();
         }
         return null;
     }
-
-//    private Class parentOf(Class clazz) {
-//        if (!clazz.isArray())
-//            return clazz.getSuperclass();
-//
-//        if (Object[].class.isAssignableFrom(clazz)) {
-//            return Object[].class;
-//        } else {
-//            return Object.class;
-//        }
-//    }
 
     private V findInterface(Class clazz) {
         Class[] ifaces = clazz.getInterfaces();
