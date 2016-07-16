@@ -2,9 +2,6 @@ package com.github.texxel.data;
 
 import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
-import com.github.texxel.data.DataLoader;
-import com.github.texxel.data.JsonLoader;
-import com.github.texxel.data.PData;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -78,6 +75,30 @@ public class JsonLoaderTest {
         assertEquals(1, jsub1.getLong("one"));
 
         assertFalse(jsub1.get("sub2").iterator().hasNext());
+    }
+
+    @Test
+    public void testPossibleConversionErrors() {
+        PData dataOut = new PData()
+                .set("int-string", "1")
+                .set("float-string", "2.3")
+                .set("bool-string", "true")
+                .set("brace-lookalike", "{}");
+
+        JsonLoader loader = new JsonLoader();
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        // write out
+        new JsonLoader().write(out, dataOut);
+        String outputed = new String(out.toByteArray());
+        ByteArrayInputStream in = new ByteArrayInputStream(outputed.getBytes());
+        // now read it in
+        PData readIn = loader.read(in);
+
+        assertEquals(PData.Type.STRING, readIn.getType("bool-string"));
+        assertEquals(PData.Type.STRING, readIn.getType("int-string"));
+        assertEquals(PData.Type.STRING, readIn.getType("float-string"));
+        assertEquals(PData.Type.STRING, readIn.getType("brace-lookalike"));
 
     }
 
